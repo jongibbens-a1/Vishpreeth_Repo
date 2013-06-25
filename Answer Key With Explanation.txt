@@ -1,0 +1,164 @@
+1) ---- The number of distinct buyers in the US, per postal code 
+---- Answer: 
+SELECT count(distinct(pb.ProspectAlternateKey)) as "Distinct buyers", pb.PostalCode 
+FROM [AdventureWorksDW2008R2].[dbo].[ProspectiveBuyer] as pb
+where 1=1 and exists 
+(
+select 1 from [AdventureWorksDW2008R2].[dbo].DimGeography as dg 
+where dg.StateProvinceCode = pb.StateProvinceCode AND dg.CountryRegionCode='US'
+)
+group by pb.PostalCode; ---- A total of 2051 records (exclusing the duplicates in the ProspectiveBuyers table and the ones that are not in the US)
+
+/* 
+- The above query returns the actual number of distinct buyers in the US per postal code identified using 'ProspectAlternateKey' instead of 'ProspectBuyerKey' because 'ProspectBuyerKey' is unique and can't be used to identify distinct records 
+- Also, the reason for using 'StateProvinceCode' instead of 'PostalCode' (as in Exhibit A, below) to  find the distinct buyers is because, the postalcodes were found NOT to be unique to the US (refer Exhibit B)
+- Made use of 'Exists' instead of 'IN/NOT IN' because Exists performs better than IN/Not IN
+
+*/
+
+
+---- Alternative solution: Not considered
+---- Exhibit A: Distinct Buyers based on postal code
+SELECT count(distinct [ProspectAlternateKey]) as "Total Distinct Buyers" , pb.PostalCode
+FROM [AdventureWorksDW2008R2].[dbo].[ProspectiveBuyer] as pb 
+where 1=1 
+and exists 
+(
+select null from [AdventureWorksDW2008R2].[dbo].DimGeography as dg 
+where dg.PostalCode = pb.PostalCode
+AND dg.CountryRegionCode='US'
+)
+group by 
+pb.PostalCode; -- A total of 1977 records
+
+
+---- Exhibit B: Postal codes common between countries
+SELECT pb.StateProvinceCode as "PB_StateProvinceCode"
+, pb.PostalCode as "PB_PostalCode"
+, dg.StateProvinceCode as "DG_StateProvinceCode"
+, dg.PostalCode  as "DG_PostalCode" 
+FROM [AdventureWorksDW2008R2].[dbo].[ProspectiveBuyer] as pb 
+join [AdventureWorksDW2008R2].[dbo].DimGeography as dg 
+on pb.PostalCode =dg.PostalCode AND dg.CountryRegionCode!='US';
+
+/* ---- Output to Exhibit B
+PB_StateProvinceCode   PB_PostalCode    DG_StateProvinceCode  DG_PostalCode
+MA                       2113             NSW                  2113
+TX                       75006             75                  75006
+TX                       75006             75                  75006
+*/
+
+
+
+
+
+
+2) ---- The average amount of transactions in the US, per postal code
+
+/*
+The following query returns the average number and amount of transactions in the US, per postal code using the following relationships:
+- 'StateProvinceCode' between dbo.DimGeography and [Person].[StateProvince] 
+- 'TerritoryId' between [Person].[StateProvince] and [Sales].[SalesOrderHeader] 
+- 'SalesOrderID' between [Sales].[SalesOrderHeader]  and [Sales].[SalesOrderDetail] 
+- 'ProductID' between [Sales].[SalesOrderDetail]  and [Production].[Product] 
+- 'ProductID' between  [Production].[Product] and [Production].[TransactionHistory]
+*/
+
+select DG.PostalCode
+, AVG(TH.Quantity) as "Average number of transactions"
+, AVG(TH.ActualCost) as "Average amount of transactions"
+ from [AdventureWorksDW2008R2].dbo.DimGeography as DG 
+JOIN [AdventureWorks2008R2].[Person].[StateProvince] as SP 
+ON DG.StateProvinceCode=SP.StateProvinceCode AND SP.CountryRegionCode='US'
+JOIN [AdventureWorks2008R2].[Sales].[SalesOrderHeader] as SOH
+ON SOH.TerritoryID=SP.TerritoryID 
+JOIN [AdventureWorks2008R2].[Sales].[SalesOrderDetail] as SOD
+ON SOD.SalesOrderDetailID = SOH.SalesOrderID
+JOIN [AdventureWorks2008R2].[Production].[Product] as P
+ON P.ProductID=SOD.ProductID
+JOIN [AdventureWorks2008R2].[Production].[TransactionHistory] as TH
+ON TH.ProductID = P.ProductID group by DG.PostalCode;
+
+
+
+
+	
+
+
+
+3) ---- The 'Total Revenue' in the US, per postal code 
+ 
+ /* 'Total Revenue' is generated based on the following defnition: Total revenue is the total receipts of a firm from the sale of any given quantity of a product.
+It can be calculated as the selling price of the firm's product times the quantity sold, i.e. total revenue = price × quantity, or letting TR be the total revenue function: 
+where Q is the quantity of output sold, and P(Q) is the inverse demand function (the demand function solved out for price in terms of quantity demanded)
+
+Net and Gross Income will eventually be calculated from Total Revenue after subtracting all the production costs or expenses incurred and the tax amount.
+ */
+
+/*
+Hence excluding all the costs or expenses involved, the following query simply returns the 'Total Revenue' in the US, per postal code using the following relationships:
+- 'SalesOrderID' between [Sales].[SalesOrderHeader]  and [Sales].[SalesOrderDetail] 
+- 'TerritoryId' between [Sales].[SalesOrderHeader] and [Person].[StateProvince]
+- 'StateProvinceCode' between [Person].[StateProvince] and dbo.DimGeography
+*/
+
+select 
+(SOD.OrderQty * SOD.UnitPrice) as "Revenue per order"
+, DG.PostalCode
+from AdventureWorks2008R2.SALES.SalesOrderDetail SOD
+JOIN [AdventureWorks2008R2].[Sales].[SalesOrderHeader] as SOH
+ON SOH.SalesOrderID = SOD.SalesOrderID
+JOIN [AdventureWorks2008R2].[Person].[StateProvince] as SP
+ON SP.TerritoryID=SOH.TerritoryID
+JOIN [AdventureWorksDW2008R2].dbo.DimGeography as DG 
+ON DG.StateProvinceCode=SP.StateProvinceCode AND SP.CountryRegionCode='US'
+group by 
+(SOD.OrderQty * SOD.UnitPrice)
+, DG.PostalCode;
+
+/*
+---- Another table to consider: 
+FactInternetSales has 'UnitPrice', 'OrderQuantity' and 'SalesAmount' (which is actually the result of (UnitPrice * OrderQuantity) in that table) columns as well. 
+But then, FactInternetSales cannot contribute to TotalRevenue and also, 'SalesOrderDetail' contains the superset of all the salesorders and the related information. 
+*/
+
+
+
+
+
+
+4) ---- The most popular product category (the top level in the product hierarchy) in the US based on postal codes
+
+/*
+The following query returns the most popular (TOP 1) product category in the US based on postal codes using the following relationships:
+
+- 'SalesOrderID' between [Sales].[SalesOrderDetail] and [Sales].[SalesOrderHeader]
+- 'TerritoryId' between Sales].[SalesOrderHeader] and [Person].[StateProvince]
+- 'StateProvinceCode' between Person].[StateProvince] and dbo.DimGeography
+- 'ProductID' between [Sales].[SalesOrderDetail]  and [Production].[Product] 
+- 'ProductSubcategoryID' between  [Production].[Product] and dbo.DimProductSubcategory
+- 'ProductCategoryKey' between dbo.DimProductSubcategory and dbo.DimProductCategory
+*/
+
+select TOP 1 PCAT.EnglishProductCategoryName, DG.PostalCode, COUNT(SOD.OrderQty) as orderqty
+from AdventureWorks2008R2.SALES.SalesOrderDetail SOD
+JOIN [AdventureWorks2008R2].[Sales].[SalesOrderHeader] as SOH
+ON SOH.SalesOrderID = SOD.SalesOrderID
+JOIN [AdventureWorks2008R2].[Person].[StateProvince] as SP
+ON SP.TerritoryID = SOH.TerritoryID
+JOIN [AdventureWorksDW2008R2].dbo.DimGeography as DG 
+ON DG.StateProvinceCode=SP.StateProvinceCode AND SP.CountryRegionCode='US'
+JOIN AdventureWorks2008R2.Production.Product as P
+ON SOD.ProductID = P.ProductID 
+JOIN AdventureWorksDW2008R2.dbo.DimProductSubcategory as PSUB
+ON PSUB.ProductSubcategoryKey = P.ProductSubcategoryID
+JOIN AdventureWorksDW2008R2.dbo.DimProductCategory as PCAT
+ON PCAT.ProductCategoryKey = PSUB.ProductCategoryKey
+group by 
+PCAT.EnglishProductCategoryName
+,DG.PostalCode
+order by 
+count(SOD.OrderQty) desc;
+
+
+
