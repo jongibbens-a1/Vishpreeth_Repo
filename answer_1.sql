@@ -1,5 +1,5 @@
 ---- The number of distinct buyers in the US, per postal code 
-
+---- Answer: 
 SELECT count(distinct(pb.ProspectAlternateKey)) as "Distinct buyers", pb.PostalCode 
 FROM [AdventureWorksDW2008R2].[dbo].[ProspectiveBuyer] as pb
 where 1=1 and exists 
@@ -17,7 +17,7 @@ group by pb.PostalCode; ---- A total of 2051 records (exclusing the duplicates i
 */
 
 
-
+---- Alternative solution: Not considered
 ---- Exhibit A: Distinct Buyers based on postal code
 SELECT count(distinct [ProspectAlternateKey]) as "Total Distinct Buyers" , pb.PostalCode
 FROM [AdventureWorksDW2008R2].[dbo].[ProspectiveBuyer] as pb 
@@ -41,11 +41,9 @@ FROM [AdventureWorksDW2008R2].[dbo].[ProspectiveBuyer] as pb
 join [AdventureWorksDW2008R2].[dbo].DimGeography as dg 
 on pb.PostalCode =dg.PostalCode AND dg.CountryRegionCode!='US';
 
-/* ---- Output for Exhibit B
-
+/* ---- Output to Exhibit B
 PB_StateProvinceCode   PB_PostalCode    DG_StateProvinceCode  DG_PostalCode
 MA                       2113             NSW                  2113
 TX                       75006             75                  75006
 TX                       75006             75                  75006
-
 */
