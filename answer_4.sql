@@ -1,8 +1,18 @@
-select TOP 1 
-  PCAT.EnglishProductCategoryName
-, DG.PostalCode
-, COUNT(SOD.OrderQty) as orderqty
-from AdventureWorks2008R2.SALES.SalesOrderDetail SOD
+---- The most popular product category (the top level in the product hierarchy) in the US based on postal codes
+
+/*
+The following query returns the most popular (TOP 1) product category in the US based on postal codes using the following relationships:
+
+- 'SalesOrderID' between [Sales].[SalesOrderDetail] and [Sales].[SalesOrderHeader]
+- 'TerritoryId' between Sales].[SalesOrderHeader] and [Person].[StateProvince]
+- 'StateProvinceCode' between Person].[StateProvince] and dbo.DimGeography
+- 'ProductID' between [Sales].[SalesOrderDetail]  and [Production].[Product] 
+- 'ProductSubcategoryID' between  [Production].[Product] and dbo.DimProductSubcategory
+- 'ProductCategoryKey' between dbo.DimProductSubcategory and dbo.DimProductCategory
+*/
+
+select TOP 1 PCAT.EnglishProductCategoryName, DG.PostalCode, COUNT(SOD.OrderQty) as orderqty
+from AdventureWorks2008R2.SALES.SalesOrderDetail as SOD 
 JOIN [AdventureWorks2008R2].[Sales].[SalesOrderHeader] as SOH
 ON SOH.SalesOrderID = SOD.SalesOrderID
 JOIN [AdventureWorks2008R2].[Person].[StateProvince] as SP
@@ -20,3 +30,5 @@ PCAT.EnglishProductCategoryName
 ,DG.PostalCode
 order by 
 count(SOD.OrderQty) desc;
+
+
