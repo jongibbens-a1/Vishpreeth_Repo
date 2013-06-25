@@ -1,0 +1,9 @@
+SELECT count(distinct [ProspectAlternateKey]) as "Total Distinct Buyers" 
+FROM [AdventureWorksDW2008R2].[dbo].[ProspectiveBuyer] as pb 
+where 1=1 
+and exists 
+(
+	select 1 from [AdventureWorksDW2008R2].[dbo].DimGeography as dg 
+	where dg.PostalCode = pb.PostalCode
+	AND dg.CountryRegionCode='US'
+);
