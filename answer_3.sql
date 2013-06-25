@@ -30,7 +30,7 @@ group by
 , DG.PostalCode;
 
 /*
----- Another table to consider: 
+---- Another table to consider for an alternative solution: 
 FactInternetSales has 'UnitPrice', 'OrderQuantity' and 'SalesAmount' (which is actually the result of (UnitPrice * OrderQuantity) in that table) columns as well. 
 But then, FactInternetSales cannot contribute to TotalRevenue and also, 'SalesOrderDetail' contains the superset of all the salesorders and the related information. 
 */
