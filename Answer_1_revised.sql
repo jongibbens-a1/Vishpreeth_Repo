@@ -33,7 +33,7 @@ ON DG.StateProvinceCode = SP.StateProvinceCode and DG.CountryRegionCode='US'; --
 */
 
 
-
+--ANSWER:
 Select 
   DG.PostalCode
 , count(distinct(C.CustomerID)) as "Distinct buyers"

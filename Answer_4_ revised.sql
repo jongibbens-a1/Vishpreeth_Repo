@@ -6,6 +6,7 @@ I have modified the original query by making use of:
 
 */
 
+--ANSWER:
 select 
 subQuery.PostalCode as "Postal Code"
 , subQuery.EnglishProductCategoryName as "Product Category Name"
