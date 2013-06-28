@@ -17,8 +17,8 @@ Count(*) = 31465 (Since SalesorderID here is the PK, all records are distinct, u
 
 
 
-3) 'AVERAGE TRANSACTION VALUE' (ATV) is calculated based on the following references mentioned below:
-   ---------------------------------------------------------------------------------------
+3) 'AVERAGE TRANSACTION VALUE' (ATV) is calculated based on the following and references mentioned below:
+   -----------------------------------------------------------------------------------------------------
 Revenue = Unit Price * quantity
 
 Transaction total = Revenue + Tax + shipping
