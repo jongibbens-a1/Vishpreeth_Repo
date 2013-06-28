@@ -35,6 +35,7 @@ Revenue: An important metric for any ecommerce business. This specifies he total
 */
 
 
+
 -- Note: The "TotalDue" column of the SOH table is the sum of [SubTotal] + [TaxAmt] + [Freight]
 -- The purpose of using SOH over SOD is because of the reason mentioned above. That is, SOD's "LineTotal" values are equal to just SOH's "SubTotal" and does not include the 'Tax' and 'Freight' charges
 Select AVG(SOH.TotalDue) as "Average Txn Value"
